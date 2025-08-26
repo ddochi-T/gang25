@@ -129,6 +129,7 @@
                 <input type="hidden" id="modal-date">
                 <input type="hidden" id="modal-period">
                 <div class="mb-4 grid grid-cols-2 gap-4">
+                <div id="booking-hint" class="text-sm text-indigo-600 mb-2 hidden"></div>
                     <div>
                         <label for="grade-select" class="block text-sm font-medium text-gray-700 mb-1">학년</label>
                         <select id="grade-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
@@ -303,6 +304,42 @@
             const alertModal = document.getElementById('alert-modal');
             const alertMessageEl = document.getElementById('alert-message');
             const alertCloseButton = document.getElementById('alert-close-button');
+
+            /* === 예약 가능 안내(선택개선 1 & 2) === */
+            const bookingHintEl = document.getElementById('booking-hint');
+
+            // 선택한 날짜의 "전 주 목요일 07:00" 계산
+            const getOpenBookingDate = (date) => {
+            const monday = getMonday(date);
+            const open = new Date(monday);
+            open.setDate(monday.getDate() - 4); // 전 주 목요일
+            open.setHours(7, 0, 0, 0);          // 오전 7시
+            return open;
+            };
+
+            // 모달 하단 안내문 갱신
+            const updateBookingHint = () => {
+              if (!bookingHintEl) return;
+              const selectedDateStr = modalDateInput.value;
+              if (!selectedDateStr) { bookingHintEl.classList.add('hidden'); return; }
+
+              const selectedDate  = new Date(selectedDateStr);
+              const assignedGrade = getAssignedGrade(selectedDate);
+              const selectedGrade = parseInt(gradeSelect.value);
+              const open          = getOpenBookingDate(selectedDate);
+              const now           = new Date();
+
+              // 선택개선 #2: 배정 없음(null) 주도 모두 전 주 목 07:00까지 제한
+              if (!isAdmin && selectedGrade !== assignedGrade && now < open) {
+                const prefix = (assignedGrade === null) ? '해당 주 예약은' : '타 학년은';
+                bookingHintEl.innerHTML =
+                  `${prefix} <strong class="text-indigo-600">${open.getMonth()+1}월 ${open.getDate()}일 오전 7시</strong>부터 예약 가능`;
+                bookingHintEl.classList.remove('hidden');
+              } else {
+                bookingHintEl.classList.add('hidden');
+                bookingHintEl.textContent = '';
+              }
+            };
 
 
             // --- 주차별 배정 학년 데이터 (월요일 기준) ---
@@ -509,12 +546,13 @@
                     } else {
                         const dateObj = new Date(date);
                         const dayOfWeek = daysOfWeek[dateObj.getDay() -1];
+                        reservationForm.reset();
+                        classInputEtcContainer.classList.add('hidden');
+                        calssInputEtc.required = false;
                         modalDateInput.value = date;
                         modalPeriodInput.value = period;
                         modalDatetimeEl.textContent = `${dateObj.getMonth()+1}월 ${dateObj.getDate()}일 (${dayOfWeek}) ${period}`;
-                        reservationForm.reset();
-                        classInputEtcContainer.classList.add('hidden');
-                        classInputEtc.required = false;
+                        updateBookingHint();
                         openModal(reservationModal);
                     }
                 }
@@ -528,7 +566,10 @@
                     classInputEtcContainer.classList.add('hidden');
                     classInputEtc.required = false;
                 }
+                updateBookingHint(); // 추가
             });
+
+            gradeSelect.addEventListener('change',updateBookingHint); // 추가
 
             reservationForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
