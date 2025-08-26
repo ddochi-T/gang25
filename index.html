@@ -209,7 +209,6 @@
     };
 
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
@@ -231,7 +230,6 @@
       const prevWeekBtn = document.getElementById('prev-week');
       const nextWeekBtn = document.getElementById('next-week');
 
-      // 예약 모달
       const reservationModal = document.getElementById('reservation-modal');
       const modalDatetimeEl = document.getElementById('modal-datetime');
       const modalDateInput = document.getElementById('modal-date');
@@ -245,7 +243,6 @@
       const reservationForm = document.getElementById('reservation-form');
       const cancelButton = document.getElementById('cancel-button');
 
-      // 삭제 모달
       const deleteModal = document.getElementById('delete-modal');
       const deleteModalDatetimeEl = document.getElementById('delete-modal-datetime');
       const deleteModalGradeClassEl = document.getElementById('delete-modal-grade-class');
@@ -256,7 +253,6 @@
       const deleteForm = document.getElementById('delete-form');
       const deleteCancelButton = document.getElementById('delete-cancel-button');
 
-      // 관리자 모달
       const adminModal = document.getElementById('admin-modal');
       const adminLoginButton = document.getElementById('admin-login-button');
       const adminForm = document.getElementById('admin-form');
@@ -264,7 +260,6 @@
       const adminCancelButton = document.getElementById('admin-cancel-button');
       const adminIndicator = document.getElementById('admin-indicator');
 
-      // 알림 모달
       const alertModal = document.getElementById('alert-modal');
       const alertMessageEl = document.getElementById('alert-message');
       const alertCloseButton = document.getElementById('alert-close-button');
@@ -304,9 +299,12 @@
 
       const getMonday = (date) => {
         const d = new Date(date);
-        const day = d.getDay();
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-        return new Date(d.setDate(diff));
+        a: {
+          const day = d.getDay();
+          const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+          d.setDate(diff);
+        }
+        return new Date(d);
       };
 
       const getAssignedGrade = (date) => {
@@ -334,7 +332,6 @@
         const open          = getOpenBookingDate(selectedDate);
         const now           = new Date();
 
-        // 배정 없음 주(null)도 전주 목 07시 전에는 모두 제한
         if (!isAdmin && selectedGrade !== assignedGrade && now < open) {
           const prefix = (assignedGrade === null) ? '해당 주 예약은' : '타 학년은';
           bookingHintTextEl.innerHTML =
@@ -375,4 +372,231 @@
         let key;
         if (assignedGrade >= 5) key='5-6';
         else if (assignedGrade >= 3) key='3-4';
-        else if (assignedGrade >= 1) key='1-
+        else if (assignedGrade >= 1) key='1-2';
+        else key='3-4';
+
+        const timetable = timetables[key];
+        const vacationEndDate = new Date('2025-09-10'); vacationEndDate.setHours(23,59,59,999);
+
+        timetable.forEach((period, periodIndex) => {
+          const row = document.createElement('tr');
+          row.className = "border-b border-gray-100";
+
+          const timeTd = document.createElement('td');
+          timeTd.className = "py-3 px-2 border-r border-gray-100 font-semibold text-gray-800 leading-tight";
+
+          const match = period.match(/(.*?)\s*\((.*)\)/);
+          if (match) timeTd.innerHTML = `<span class="text-lg">${match[1]}</span><br><span class="text-sm font-normal text-gray-500">(${match[2]})</span>`;
+          else timeTd.innerHTML = `<span class="text-lg">${period}</span>`;
+          row.appendChild(timeTd);
+
+          weekDates.forEach((date, dayIndex) => {
+            const cell = document.createElement('td');
+            const innerDiv = document.createElement('div');
+            innerDiv.className = "h-20 flex flex-col justify-center items-center rounded-lg";
+            const dateString = formatDate(date);
+            const holidayName = holidays[dateString];
+            const reservationKey = `${dateString}_${period}`;
+            const reservation = reservations[reservationKey];
+
+            cell.dataset.date = dateString;
+            cell.dataset.period = period;
+
+            if (date <= vacationEndDate) {
+              cell.className = "py-2 px-1";
+              innerDiv.classList.add('disabled-slot','text-red-500','font-bold');
+              innerDiv.textContent = '여름방학';
+            } else if (holidayName) {
+              cell.className = "py-2 px-1";
+              innerDiv.classList.add('disabled-slot','text-red-500','font-bold');
+              innerDiv.textContent = holidayName;
+            } else if (dayIndex === 2 && periodIndex === timetable.length - 1) {
+              cell.className = "py-2 px-1";
+              innerDiv.classList.add('disabled-slot');
+              innerDiv.textContent = '방과후';
+            } else if (reservation) {
+              cell.className = "py-2 px-1 relative cursor-pointer";
+              innerDiv.classList.add('bg-indigo-200','text-indigo-800','hover:bg-indigo-300','transition-colors');
+              innerDiv.innerHTML = `<span class="font-bold text-base">${reservation.gradeClass}</span><span class="text-sm mt-1 break-words px-1">${reservation.purpose}</span>`;
+            } else {
+              cell.className = "py-2 px-1 relative cursor-pointer";
+              innerDiv.classList.add('bg-gray-50','hover:bg-green-100','transition-colors');
+              innerDiv.innerHTML = `<span class="text-gray-400 text-2xl">+</span>`;
+            }
+            cell.appendChild(innerDiv);
+            row.appendChild(cell);
+          });
+          calendarBodyEl.appendChild(row);
+        });
+      };
+
+      const openModal = (el) => {
+        el.classList.remove('hidden'); el.classList.add('flex');
+        setTimeout(() => { el.querySelector('div').classList.remove('scale-95'); }, 10);
+      };
+      const closeModal = (el) => {
+        el.querySelector('div').classList.add('scale-95');
+        setTimeout(() => { el.classList.add('hidden'); el.classList.remove('flex'); }, 300);
+      };
+      const openAlertModal = (msg) => { alertMessageEl.innerHTML = msg; openModal(alertModal); };
+
+      // --- 이벤트
+      prevWeekBtn.addEventListener('click', () => { currentDate.setDate(currentDate.getDate()-7); renderCalendar(); });
+      nextWeekBtn.addEventListener('click', () => { currentDate.setDate(currentDate.getDate()+7); renderCalendar(); });
+
+      calendarBodyEl.addEventListener('click', (e) => {
+        const cell = e.target.closest('td[data-date]');
+        if (!cell || cell.querySelector('.disabled-slot')) return;
+
+        const { date, period } = cell.dataset;
+        const reservationKey = `${date}_${period}`;
+        const reservation = reservations[reservationKey];
+
+        if (reservation) {
+          const dateObj = new Date(date);
+          const dayOfWeek = ['월','화','수','목','금','토','일'][dateObj.getDay()-1];
+          deleteModalDateInput.value = date;
+          deleteModalPeriodInput.value = period;
+          deleteModalDatetimeEl.textContent = `${dateObj.getMonth()+1}월 ${dateObj.getDate()}일 (${dayOfWeek}) ${period}`;
+          deleteModalGradeClassEl.textContent = reservation.gradeClass;
+          deleteModalPurposeEl.textContent = reservation.purpose;
+          deleteForm.reset();
+          openModal(deleteModal);
+        } else {
+          const dateObj = new Date(date);
+          const dayOfWeek = ['월','화','수','목','금','토','일'][dateObj.getDay()-1];
+
+          reservationForm.reset();
+          classInputEtcContainer.classList.add('hidden');
+          classInputEtc.required = false;
+
+          modalDateInput.value = date;
+          modalPeriodInput.value = period;
+          modalDatetimeEl.textContent = `${dateObj.getMonth()+1}월 ${dateObj.getDate()}일 (${dayOfWeek}) ${period}`;
+
+          openModal(reservationModal);
+          setTimeout(() => { try{ updateBookingHint(); }catch(e){ console.error(e); } }, 0);
+        }
+      });
+
+      classSelect.addEventListener('change', () => {
+        if (classSelect.value === 'etc') { classInputEtcContainer.classList.remove('hidden'); classInputEtc.required = true; }
+        else { classInputEtcContainer.classList.add('hidden'); classInputEtc.required = false; }
+        updateBookingHint();
+      });
+      gradeSelect.addEventListener('change', updateBookingHint);
+
+      reservationForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const selectedDate  = new Date(modalDateInput.value);
+        const assignedGrade = getAssignedGrade(selectedDate);
+        const selectedGrade = parseInt(gradeSelect.value);
+
+        if (!isAdmin) {
+          const now = new Date();
+          const openBookingDate = getOpenBookingDate(selectedDate);
+          if (selectedGrade !== assignedGrade && now < openBookingDate) {
+            const message = `타 학년은<br><strong class="text-indigo-600">${openBookingDate.getMonth()+1}월 ${openBookingDate.getDate()}일 오전 7시</strong><br>부터 예약 가능합니다.`;
+            openAlertModal(message);
+            return;
+          }
+        }
+
+        const date = modalDateInput.value;
+        const period = modalPeriodInput.value;
+
+        let className;
+        if (classSelect.value === 'etc') className = classInputEtc.value.trim();
+        else className = `${classSelect.value}반`;
+
+        const gradeClass = `${gradeSelect.value}학년 ${className}`;
+        const purpose = purposeInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        if (purpose && password && className) {
+          const reservationKey = `${date}_${period}`;
+          const reservationData = { gradeClass, purpose, password };
+
+          try {
+            const docSnap = await getDocFromServer(doc(reservationsCol, reservationKey));
+            if (docSnap.exists()) {
+              openAlertModal("다른 사용자가 먼저 예약했습니다.<br>페이지가 곧 새로고침됩니다.");
+            } else {
+              await setDoc(doc(reservationsCol, reservationKey), reservationData);
+              closeModal(reservationModal);
+            }
+          } catch (error) {
+            console.error("Error adding document: ", error);
+            openAlertModal("예약 중 오류가 발생했습니다.");
+          }
+        }
+      });
+
+      deleteForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const date = deleteModalDateInput.value;
+        const period = deleteModalPeriodInput.value;
+        const password = deletePasswordInput.value.trim();
+        const reservationKey = `${date}_${period}`;
+
+        const docSnap = await getDocFromServer(doc(reservationsCol, reservationKey));
+        if (docSnap.exists() && (docSnap.data().password === password || isAdmin)) {
+          try { await deleteDoc(doc(reservationsCol, reservationKey)); closeModal(deleteModal); }
+          catch (error) { console.error("Error removing document: ", error); openAlertModal("삭제 중 오류가 발생했습니다."); }
+        } else {
+          openAlertModal('비밀번호가 일치하지 않습니다.');
+        }
+      });
+
+      adminLoginButton.addEventListener('click', () => openModal(adminModal));
+      adminForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (adminPasswordInput.value === ADMIN_PASSWORD) { isAdmin = true; adminIndicator.classList.remove('hidden'); closeModal(adminModal); adminForm.reset(); }
+        else { openAlertModal("관리자 암호가 올바르지 않습니다."); }
+      });
+      adminIndicator.addEventListener('click', () => { isAdmin = false; adminIndicator.classList.add('hidden'); openAlertModal("관리자 모드가 종료되었습니다."); });
+
+      cancelButton.addEventListener('click', () => closeModal(reservationModal));
+      deleteCancelButton.addEventListener('click', () => closeModal(deleteModal));
+      adminCancelButton.addEventListener('click', () => closeModal(adminModal));
+      alertCloseButton.addEventListener('click', () => closeModal(alertModal));
+      reservationModal.addEventListener('click', (e) => { if (e.target === reservationModal) closeModal(reservationModal); });
+      deleteModal.addEventListener('click', (e) => { if (e.target === deleteModal) closeModal(deleteModal); });
+      alertModal.addEventListener('click', (e) => { if (e.target === alertModal) closeModal(alertModal); });
+
+      const initializeFirebase = async () => {
+        if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+          openAlertModal("<strong class='text-red-500'>Firebase 설정 오류</strong><br><br>코드의 `firebaseConfig` 부분을<br>본인의 Firebase 프로젝트 값으로<br>수정한 후 다시 시도해주세요.");
+          loadingOverlay.classList.add('opacity-0'); setTimeout(() => loadingOverlay.style.display='none', 300); return;
+        }
+        try {
+          await signInAnonymously(auth);
+          let isInitialLoad = true;
+          onSnapshot(reservationsCol, (querySnapshot) => {
+            const newReservations = {};
+            querySnapshot.forEach((doc) => { newReservations[doc.id] = doc.data(); });
+            reservations = newReservations;
+            renderCalendar();
+            if (isInitialLoad) { loadingOverlay.classList.add('opacity-0'); setTimeout(() => loadingOverlay.style.display='none', 300); isInitialLoad = false; }
+          }, (error) => {
+            console.error("Error listening to reservations: ", error);
+            openAlertModal("데이터를 불러오는 데 실패했습니다.<br>페이지를 새로고침 해주세요.");
+            loadingOverlay.classList.add('opacity-0'); setTimeout(() => loadingOverlay.style.display='none', 300);
+          });
+        } catch (error) {
+          console.error("Firebase initialization error:", error);
+          if (error.code === 'auth/operation-not-allowed') {
+            openAlertModal("익명 로그인이 활성화되지 않았습니다.<br><br><strong class='text-red-500'>해결 방법:</strong><br>1. Firebase 콘솔로 이동<br>2. Authentication &gt; Sign-in method<br>3. '익명'을 찾아 활성화해주세요.");
+          } else {
+            openAlertModal("시스템에 연결하는 중 오류가 발생했습니다.<br>페이지를 새로고침 해주세요.");
+          }
+          loadingOverlay.classList.add('opacity-0'); setTimeout(() => loadingOverlay.style.display='none', 300);
+        }
+      };
+
+      initializeFirebase();
+    });
+  </script>
+</body>
+</html>
