@@ -543,18 +543,29 @@
                         deleteModalPurposeEl.textContent = reservation.purpose;
                         deleteForm.reset();
                         openModal(deleteModal);
-                    } else {
-                        const dateObj = new Date(date);
-                        const dayOfWeek = daysOfWeek[dateObj.getDay() -1];
-                        reservationForm.reset();
-                        classInputEtcContainer.classList.add('hidden');
-                        calssInputEtc.required = false;
-                        modalDateInput.value = date;
-                        modalPeriodInput.value = period;
-                        modalDatetimeEl.textContent = `${dateObj.getMonth()+1}월 ${dateObj.getDate()}일 (${dayOfWeek}) ${period}`;
-                        updateBookingHint();
-                        openModal(reservationModal);
-                    }
+                   } else {
+  const dateObj = new Date(date);
+  const dayOfWeek = daysOfWeek[dateObj.getDay() - 1];
+
+  // 1) 리셋 먼저
+  reservationForm.reset();
+  classInputEtcContainer.classList.add('hidden');
+  classInputEtc.required = false;
+
+  // 2) 리셋 후 값 세팅
+  modalDateInput.value = date;
+  modalPeriodInput.value = period;
+  modalDatetimeEl.textContent =
+    `${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일 (${dayOfWeek}) ${period}`;
+
+  // 3) 모달을 "먼저" 연다 (여기서 실패하지 않게)
+  openModal(reservationModal);
+
+  // 4) 힌트는 다음 틱에 안전하게 갱신 (에러 나도 모달은 이미 열림)
+  setTimeout(() => {
+    try { updateBookingHint(); } catch (e) { console.error('updateBookingHint error:', e); }
+  }, 0);
+}
                 }
             });
             
