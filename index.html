@@ -532,20 +532,21 @@
 
             reservationForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const assignedGrade = getAssignedGrade(currentDate);
+                const selectedDate = new Date(modalDateInput.value); // 클릭한 칸 날짜
+                const assignedGrade = getAssignedGrade(selectedDate);
                 const selectedGrade = parseInt(gradeSelect.value);
 
                 // 시간 조건 체크 로직 (관리자가 아닐 경우에만)
                 if (!isAdmin) {
                     const now = new Date();
-                    const mondayOfBookingWeek = getMonday(currentDate);
+                    const mondayOfBookingWeek = getMonday(selectedDate);
                     const openBookingDate = new Date(mondayOfBookingWeek);
                     openBookingDate.setDate(mondayOfBookingWeek.getDate() - 4); // 전 주 목요일
                     openBookingDate.setHours(7, 0, 0, 0); // 오전 7시
 
                     if (assignedGrade && selectedGrade !== assignedGrade) {
                         if (now < openBookingDate) {
-                            const message = `타 학년은<br><strong class="text-indigo-600">\${openBookingDate.getMonth() + 1}월 \${openBookingDate.getDate()}일 오전 7시</strong><br>부터 예약 가능합니다.`;
+                            const message = `타 학년은<br><strong class="text-indigo-600">${openBookingDate.getMonth() + 1}월 ${openBookingDate.getDate()}일 오전 7시</strong><br>부터 예약 가능합니다.`;
                             openAlertModal(message);
                             return;
                         }
