@@ -3,18 +3,56 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>무엇을 해볼까요?</title>
+  <title>단어 학습 · 맞추기</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
   <main class="container">
     <header class="page-header">
-      <h1>무엇을 해볼까요?</h1>
-      <p id="current-context">로딩 중…</p>
+      <h1>단어 학습 · 맞추기</h1>
+      <p id="current-context" class="muted">학년과 단원을 먼저 선택하세요</p>
     </header>
 
-    <section data-view="home" id="view-home">
+    <!-- 1) 설정 화면: 학년/단원 먼저 선택 -->
+    <section data-view="setup" id="view-setup">
+      <div class="setup-card">
+        <label>학년
+          <select id="sel-grade">
+            <option value="3">3학년</option>
+            <option value="4">4학년</option>
+            <option value="5" selected>5학년</option>
+            <option value="6">6학년</option>
+          </select>
+        </label>
+        <label>단원
+          <select id="sel-unit">
+            <option value="1">1단원</option>
+            <option value="2">2단원</option>
+            <option value="3" selected>3단원</option>
+            <option value="4">4단원</option>
+            <option value="5">5단원</option>
+            <option value="6">6단원</option>
+            <option value="7">7단원</option>
+            <option value="8">8단원</option>
+          </select>
+        </label>
+        <div class="center">
+          <button id="btn-setup-go" class="primary">시작하기</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2) 모드 메뉴 -->
+    <section data-view="menu" id="view-menu" class="hidden">
+      <div class="toolbar">
+        <button class="ghost" data-back="setup">← 학년/단원 바꾸기</button>
+        <div class="tts">
+          <label><input type="radio" name="voiceGender" value="female" checked> 여자</label>
+          <label><input type="radio" name="voiceGender" value="male"> 남자</label>
+        </div>
+      </div>
+
       <div class="menu-grid">
         <button class="menu-card purple" id="btn-learn">
           <div class="menu-emoji">📖</div>
@@ -26,25 +64,13 @@
           <div class="menu-title">단어 맞추기</div>
           <div class="menu-sub">뜻을 고르기</div>
         </button>
-        <button class="menu-card orange" id="btn-fill">
-          <div class="menu-emoji">✏️</div>
-          <div class="menu-title">빈 칸 채우기</div>
-          <div class="menu-sub">글자 빠진 단어 맞히기</div>
-        </button>
-        <button class="menu-card green" id="btn-pair">
-          <div class="menu-emoji">🧩</div>
-          <div class="menu-title">짝 맞추기</div>
-          <div class="menu-sub">단어–뜻 짝 맞추기</div>
-        </button>
-      </div>
-      <div class="center">
-        <button id="btn-open-pref" class="ghost">학년 바꾸기</button>
       </div>
     </section>
 
+    <!-- 3) 플래시카드 -->
     <section data-view="learn" id="view-learn" class="hidden">
       <div class="toolbar">
-        <button class="ghost" data-back>← 메뉴로</button>
+        <button class="ghost" data-back="menu">← 메뉴로</button>
         <div class="tts">
           <label><input type="radio" name="voiceGender" value="female" checked> 여자</label>
           <label><input type="radio" name="voiceGender" value="male"> 남자</label>
@@ -58,9 +84,10 @@
       </div>
     </section>
 
+    <!-- 4) 단어 맞추기 -->
     <section data-view="match" id="view-match" class="hidden">
       <div class="toolbar">
-        <button class="ghost" data-back>← 메뉴로</button>
+        <button class="ghost" data-back="menu">← 메뉴로</button>
         <div class="tts">
           <label><input type="radio" name="voiceGender" value="female" checked> 여자</label>
           <label><input type="radio" name="voiceGender" value="male"> 남자</label>
@@ -71,35 +98,7 @@
         <button id="btn-match-next" class="primary">다음 문제</button>
       </div>
     </section>
-
-    <section data-view="fill" id="view-fill" class="hidden">
-      <div class="toolbar"><button class="ghost" data-back>← 메뉴로</button></div>
-      <div class="center muted">이 모드는 곧 업데이트 됩니다.</div>
-    </section>
-
-    <section data-view="pair" id="view-pair" class="hidden">
-      <div class="toolbar"><button class="ghost" data-back>← 메뉴로</button></div>
-      <div class="center muted">이 모드는 곧 업데이트 됩니다.</div>
-    </section>
   </main>
-
-  <dialog id="pref-dialog">
-    <form method="dialog" class="pref">
-      <h3>학년 선택</h3>
-      <label>학년
-        <select id="sel-grade">
-          <option value="3">3학년</option>
-          <option value="4">4학년</option>
-          <option value="5" selected>5학년</option>
-          <option value="6">6학년</option>
-        </select>
-      </label>
-      <menu>
-        <button value="cancel" class="ghost">취소</button>
-        <button id="btn-save-pref" value="default" class="primary">저장</button>
-      </menu>
-    </form>
-  </dialog>
 
   <script src="js/app.js" defer></script>
 </body>
