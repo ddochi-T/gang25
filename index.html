@@ -182,8 +182,10 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
       getAuth, onAuthStateChanged,
-      GoogleAuthProvider, signInWithPopup, signOut
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+      GoogleAuthProvider,
+      signInWithRedirect, getRedirectResult,
+      signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import {
       getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDocFromServer
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -208,6 +210,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+      getRedirectResult(auth).catch(() => {});
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ hd: SCHOOL_DOMAIN }); // 선택: 학교 계정 선택 유도
 
@@ -358,7 +361,7 @@
       openModal(alertModal);
       setTimeout(() => {
         document.getElementById('loginNow')?.addEventListener('click', async () => {
-          try { await signInWithPopup(auth, provider); closeModal(alertModal); }
+          try { await signInWithRedirect(auth, provider); closeModal(alertModal); }
           catch (e) { console.error(e); }
         });
       }, 0);
@@ -589,7 +592,7 @@
 
     /* -------------------- 로그인 UI -------------------- */
     loginBtn.addEventListener('click', async () => {
-      try { await signInWithPopup(auth, provider); }
+      try { await signInWithRedirect(auth, provider); }
       catch (e) { console.error(e); }
     });
     logoutBtn.addEventListener('click', async () => {
