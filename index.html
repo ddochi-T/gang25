@@ -571,7 +571,6 @@
           loadingOverlay.classList.add('opacity-0'); setTimeout(() => loadingOverlay.style.display='none', 300); return;
         }
         try {
-          await signInAnonymously(auth);
           let isInitialLoad = true;
           onSnapshot(reservationsCol, (querySnapshot) => {
             const newReservations = {};
